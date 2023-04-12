@@ -59,6 +59,13 @@ class MainActivity : AppCompatActivity() {
                 binding.tvTemp.text = getString(R.string.temp_template,(weatherData.temp -273.15).toInt())
                 binding.tvDesc.text = weatherData.description
 
+                if (weatherData.icon.isNotBlank()){
+                    withContext(Dispatchers.IO){
+                        bitmap = WeatherUtil.getImage(weatherData.icon)
+                    }
+                }
+                binding.imgWeather.setImageBitmap(bitmap)
+
             }
 
 
