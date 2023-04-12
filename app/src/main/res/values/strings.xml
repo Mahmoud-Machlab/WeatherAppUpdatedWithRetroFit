@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">WeatherApp</string>
     <string name="city_name_input">Bitte Stadt eingeben</string>
+    <string name="wetter">Wetter</string>
+    <string name="wetterbild">wetterbild</string>
+    <string name="temp_template">%1d \u2103</string>
 </resources>
