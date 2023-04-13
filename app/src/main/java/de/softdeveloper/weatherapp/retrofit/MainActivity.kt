@@ -1,6 +1,7 @@
 package de.softdeveloper.weatherapp.retrofit
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -26,7 +27,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        var weatherDataDef : Deferred<WeatherData>
+        var weatherDataDef: Deferred<WeatherData>
         var weatherData: WeatherData
         var image: Bitmap
         var imageCall: Call<ResponseBody>
@@ -37,25 +38,56 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         binding.btnShowWeather.setOnClickListener {
-            val apiService= retrofit.create(WeatherEndpointInterface::class.java)
+            val apiService = retrofit.create(WeatherEndpointInterface::class.java)
             val city = binding.etCity.text.toString()
             val appid = getString(R.string.api_key)
             val call = apiService.getWeatherData(city, id = appid)
 
             call.enqueue(object : Callback<WeatherData> {
                 override fun onResponse(call: Call<WeatherData>, response: Response<WeatherData>) {
-                   runBlocking {
-                       weatherDataDef = async { response.body()!!}
-                       weatherData = weatherDataDef.await()
+                    runBlocking {
+                        weatherDataDef = async { response.body()!! }
+                        weatherData = weatherDataDef.await()
 
-                       binding.tvDesc.text= weatherData.info[0].description
-                       binding.tvTemp.text= weatherData.temp.temp.minus(273.15).toInt().toString()
-                   }
+                        binding.tvDesc.text = weatherData.info[0].description
+                        binding.tvTemp.text = weatherData.temp.temp.minus(273.15).toInt().toString()
+                        imageCall =
+                            apiService.loadImage("$IMAGE_URL_STRING${weatherData.info[0].icon}$FILE_EXT")
+                        imageCall.enqueue(object : Callback<ResponseBody> {
+                            override fun onResponse(
+                                call: Call<ResponseBody>,
+                                response: Response<ResponseBody>
+                            ) {
+                                runBlocking {
+                                    var defImage = async {
+                                        BitmapFactory.decodeStream(
+                                            response.body()?.byteStream()
+                                        )
+                                    }
+                                    image = defImage.await()
+                                    binding.imgWeather.setImageBitmap(image)
+                                }
+                            }
+
+                            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Fehler beim Abruf des Bildes",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                Log.e("MainActivity", "Lesefehler Bild", t)
+                            }
+                        })
+                    }
                 }
 
                 override fun onFailure(call: Call<WeatherData>, t: Throwable) {
-                    Toast.makeText(this@MainActivity, "Fehler beim Abruf der Daten", Toast.LENGTH_SHORT).show()
-                    Log.e("MainActivity", "Lesefehler ",t )
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Fehler beim Abruf der Daten",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    Log.e("MainActivity", "Lesefehler Daten", t)
                 }
             })
         }
